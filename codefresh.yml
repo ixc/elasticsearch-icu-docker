@@ -6,6 +6,6 @@ steps:
     image_name: interaction/elasticsearch-icu
   push_image:
     type: push
-    title: Push Image to Docker Hub
+    title: Push Docker Image to Registry
     candidate: '${{build_image}}'
     tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
