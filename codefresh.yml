@@ -1,0 +1,11 @@
+version: '1.0'
+steps:
+  build_image:
+    type: build
+    title: Build Docker Image
+    image_name: interaction/elasticsearch-icu
+  push_image:
+    type: push
+    title: Push Image to Docker Hub
+    candidate: '${{build_image}}'
+    tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
