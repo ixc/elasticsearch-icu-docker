@@ -2,10 +2,10 @@ version: '1.0'
 steps:
   build_image:
     type: build
-    title: Build Docker Image
+    title: Building Docker Image
     image_name: interaction/elasticsearch-icu
   push_image:
     type: push
-    title: Push Docker Image to Registry
+    title: Pushing Docker Image to Registry
     candidate: '${{build_image}}'
     tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
