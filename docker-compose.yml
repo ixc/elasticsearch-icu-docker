@@ -2,4 +2,4 @@ version: "2"
 services:
   elasticsearch:
     build: .
-    image: interaction/elasticsearch:local
+    image: interaction/elasticsearch-icu:local
