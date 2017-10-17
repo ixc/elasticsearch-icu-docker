@@ -1,0 +1,6 @@
+# Settings from upstream:
+# https://github.com/docker-library/elasticsearch/blob/master/2.4/alpine/config/elasticsearch.yml
+network.host: 0.0.0.0
+
+# Custom settings
+script.engine.groovy.inline.search: true
