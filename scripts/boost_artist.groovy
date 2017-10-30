@@ -1,1 +1,1 @@
-return _score + (doc['_type'].value == 'artist_index' ? 7 : (doc['_type'].value == 'artwork_index' ? 5 : (doc['_type'].value == 'research_project_index' ? 25 : (doc['_type'].value == 'digital_publication_index' ? 25 : 0))))
+return _score + (doc['_type'].value == 'artist_index' ? _score * 100 : (doc['_type'].value == 'artwork_index' ? _score * 5 : (doc['_type'].value == 'research_project_index' ? _score * 1 : (doc['_type'].value == 'digital_publication_index' ? _score * 1 : _score * 1))))
