@@ -3,3 +3,6 @@ services:
   elasticsearch:
     build: .
     image: interaction/elasticsearch-icu:1-local
+    ports:
+      - 9200:9200
+      - 9300:9300
