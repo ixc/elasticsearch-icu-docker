@@ -2,6 +2,8 @@ version: "2"
 services:
   elasticsearch:
     build: .
+    environment:
+      - xpack.security.enabled=false
     image: interaction/elasticsearch-icu:5-local
     ports:
       - 9200:9200
