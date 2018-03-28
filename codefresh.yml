@@ -1,11 +1,85 @@
 version: '1.0'
 steps:
-  build_image:
+  build_image_6:
     type: build
-    title: Building Docker Image
+    title: Building Docker Image (6)
+    dockerfile: 6/Dockerfile
     image_name: interaction/elasticsearch-icu
-  push_image:
+    tag: 6
+  push_image_6:
     type: push
-    title: Pushing Docker Image to Registry
-    candidate: '${{build_image}}'
-    tag: '${{CF_BRANCH_TAG_NORMALIZED}}'
+    title: Pushing Docker Image to Registry (6)
+    candidate: '${{build_image_6}}'
+    tag: 6
+
+  build_image_5:
+    type: build
+    title: Building Docker Image (5)
+    dockerfile: 5/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 5
+  push_image_5:
+    type: push
+    title: Pushing Docker Image to Registry (5)
+    candidate: '${{build_image_5}}'
+    tag: 5
+
+  build_image_5_alpine:
+    type: build
+    title: Building Docker Image (5-alpine)
+    dockerfile: 5-alpine/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 5-alpine
+  push_image_5_alpine:
+    type: push
+    title: Pushing Docker Image to Registry (5-alpine)
+    candidate: '${{build_image_5_alpine}}'
+    tag: 5-alpine
+
+  build_image_24:
+    type: build
+    title: Building Docker Image (2.4)
+    dockerfile: 2.4/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 2.4
+  push_image_24:
+    type: push
+    title: Pushing Docker Image to Registry (2.4)
+    candidate: '${{build_image_24}}'
+    tag: 2.4
+
+  build_image_24_alpine:
+    type: build
+    title: Building Docker Image (2.4-alpine)
+    dockerfile: 2.4-alpine/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 2.4-alpine
+  push_image_24_alpine:
+    type: push
+    title: Pushing Docker Image to Registry (2.4-alpine)
+    candidate: '${{build_image_24_alpine}}'
+    tag: 2.4-alpine
+
+  build_image_1:
+    type: build
+    title: Building Docker Image (1)
+    dockerfile: 1/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 1
+  push_image_1:
+    type: push
+    title: Pushing Docker Image to Registry (1)
+    candidate: '${{build_image_1}}'
+    tag: 1
+
+  build_image_1_alpine:
+    type: build
+    title: Building Docker Image (1-alpine)
+    dockerfile: 1-alpine/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: 1-alpine
+  push_image_1_alpine:
+    type: push
+    title: Pushing Docker Image to Registry (1-alpine)
+    candidate: '${{build_image_1_alpine}}'
+    tag: 1-alpine
