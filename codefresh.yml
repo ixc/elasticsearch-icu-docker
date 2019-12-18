@@ -1,5 +1,17 @@
 version: '1.0'
 steps:
+  build_image_7:
+    type: build
+    title: Building Docker Image (7)
+    dockerfile: 7/Dockerfile
+    image_name: interaction/elasticsearch-icu
+    tag: '7'
+  push_image_7:
+    type: push
+    title: Pushing Docker Image to Registry (7)
+    candidate: '${{build_image_7}}'
+    tag: '7'
+
   build_image_6:
     type: build
     title: Building Docker Image (6)
