@@ -1,5 +1,4 @@
-What is this?
-=============
+# What is this?
 
 These Docker images are based on the official ElasticSearch images, with the ICU analysis plugin installed.
 
@@ -11,9 +10,7 @@ From 6.0, the official Docker images are hosted by Elastic in their own private 
 
 All other images (`alpine` variants and versions earlier than `5`) are based on images from the official library on Docker Hub (https://hub.docker.com/r/_/elasticsearch/).
 
-
-How do I disable authentication?
---------------------------------
+## How do I disable authentication?
 
 The official Elastic base images have X-Pack installed, and version 5 has security enabled by default with a 30 day trial. From version 6, security is only enabled in the `platinum` image, which we don't use.
 
