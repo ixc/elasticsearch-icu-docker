@@ -23,9 +23,7 @@ jobs:
         with:
           file: ${{ matrix.version }}/Dockerfile
           push: true
-          tags:
-            - ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
-            - ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
+          tags: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }},${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
     strategy:
       matrix:
         version:
