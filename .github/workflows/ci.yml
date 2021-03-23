@@ -23,7 +23,12 @@ jobs:
         with:
           file: ${{ matrix.version }}/Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }},${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
+          tags: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
+      - name: Push Image (version)
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker tag ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }} ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
+          docker push ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
     strategy:
       matrix:
         version:
@@ -90,6 +95,13 @@ jobs:
             --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-arm64 \
             --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-x64
           docker manifest push ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
+      - name: Create and Push Manifest List (latest)
+        if: github.ref == 'refs/heads/master' && matrix.version == 7
+        run: |
+          docker manifest create ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:latest \
+            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-arm64 \
+            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-x64
+          docker manifest push ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:latest
     strategy:
       matrix:
         version:
