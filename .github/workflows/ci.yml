@@ -2,70 +2,24 @@ name: Continuous Integration
 
 on:
   push:
-    branches: '*'
   schedule:
-    - cron:  '0 17 * * *'
+    - cron:  '0 17 * * *'  # 3 AM AEST
 
 jobs:
-  image-x64:
-    runs-on:
-      - linux
-      - self-hosted
-      - x64
-    steps:
-      # Transform ${{ git.ref }} from `refs/heads/<branch_name>` to `${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:<branch_name>`.
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
-        with:
-          images: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}
-          tag-latest: false
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build image and push SHA tag
-        uses: docker/build-push-action@v2
-        with:
-          file: ${{ matrix.version }}/Dockerfile
-          push: true
-          tags: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
-      - name: Push branch tag
-        run: |
-          docker tag ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }} ${{ steps.docker_meta.outputs.tags }}-${{ matrix.version }}
-          docker push ${{ steps.docker_meta.outputs.tags }}-${{ matrix.version }}
-      - name: Push version tag
-        if: github.ref == 'refs/heads/master'
-        run: |
-          docker tag ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }} ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
-          docker push ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
-    strategy:
-      matrix:
-        version:
-          - 1
-          - 1-alpine
-          - 2.4
-          - 2.4-alpine
-          - 5
-          - 5-alpine
-          - 6
-
-  image-multiarch:
+  image:
     runs-on:
       - ${{ matrix.arch }}
       - linux
       - self-hosted
     steps:
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
+      - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Build image and push SHA tag
-        uses: docker/build-push-action@v2
+      - uses: docker/build-push-action@v2
         with:
           file: ${{ matrix.version }}/Dockerfile
+          no-cache: ${{ github.event_name == 'schedule' }}
           push: true
           tags: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-${{ matrix.arch }}
     strategy:
@@ -77,50 +31,103 @@ jobs:
           - 7
 
   manifest:
-    needs: image-multiarch
+    env:
+      IMAGE_REPO: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}
+      IMAGE_TAG: sha-${{ github.sha }}-${{ matrix.version }}
+    needs: image
     runs-on:
       - linux
       - self-hosted
     steps:
-      # Transform ${{ git.ref }} from `refs/heads/<branch_name>` to `${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:<branch_name>`.
-      - name: Docker meta
-        id: docker_meta
-        uses: crazy-max/ghaction-docker-meta@v1
-        with:
-          images: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}
-          tag-latest: false
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
+      - uses: docker/login-action@v1
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-      - name: Push SHA tag
+      - name: Push branch manifest list
         run: |
-          docker manifest create ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }} \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-arm64 \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-x64
-          docker manifest push --purge ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}
-      - name: Push branch tag
+          docker buildx imagetools create -t \
+            ${{ env.IMAGE_REPO }}:${GITHUB_REF#refs/heads/}-${{ matrix.version }} \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-arm64 \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-x64
+      - name: Push SHA manifest list
         run: |
-          docker manifest create ${{ steps.docker_meta.outputs.tags }}-${{ matrix.version }} \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-arm64 \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-x64
-          docker manifest push --purge ${{ steps.docker_meta.outputs.tags }}-${{ matrix.version }}
-      - name: Push version tag
+          docker buildx imagetools create -t \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }} \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-arm64 \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-x64
+      - name: Push version manifest list
         if: github.ref == 'refs/heads/master'
         run: |
-          docker manifest create ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }} \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-arm64 \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-x64
-          docker manifest push --purge ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:${{ matrix.version }}
-      - name: Push latest tag
-        if: github.ref == 'refs/heads/master' && matrix.version == 7
+          # Version.
+          docker buildx imagetools create -t \
+            ${{ env.IMAGE_REPO }}:${{ matrix.version }} \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-arm64 \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-x64
+      - name: Push 'latest' manifest list
+        if: github.ref == 'refs/heads/master' && matrix.version == '7'
         run: |
-          docker manifest create ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:latest \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-arm64 \
-            --amend ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:sha-${{ github.sha }}-${{ matrix.version }}-x64
-          docker manifest push --purge ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}:latest
+          # Latest.
+          docker buildx imagetools create -t \
+            ${{ env.IMAGE_REPO }}:latest \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-arm64 \
+            ${{ env.IMAGE_REPO }}:${{ env.IMAGE_TAG }}-x64
+      - name: Remove arch tags
+        run: |
+          TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"username": "${{ secrets.DOCKER_USERNAME }}", "password": "${{ secrets.DOCKER_PASSWORD }}"}' "https://hub.docker.com/v2/users/login/" | jq -r '.token')
+          curl "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}/tags/${{ env.IMAGE_TAG }}-arm64/" -X DELETE -H "Authorization: JWT ${TOKEN}"
+          curl "https://hub.docker.com/v2/repositories/${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}/tags/${{ env.IMAGE_TAG }}-x64/" -X DELETE -H "Authorization: JWT ${TOKEN}"
     strategy:
       matrix:
         version:
           - 7
+
+  image-x64:
+    env:
+      IMAGE_REPO: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}
+      IMAGE_TAG: sha-${{ github.sha }}-${{ matrix.version }}
+    runs-on:
+      - linux
+      - self-hosted
+      - x64
+    steps:
+      - uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/build-push-action@v2
+        with:
+          file: ${{ matrix.version }}/Dockerfile
+          no-cache: ${{ github.event_name == 'schedule' }}
+          push: true
+          tags: ${{ env.IMAGE_REPO }}:sha-${{ env.IMAGE_TAG }}
+      - name: Push branch tag
+        run: |
+          docker tag ${{ env.IMAGE_REPO }}:sha-${{ env.IMAGE_TAG }} ${{ env.IMAGE_REPO }}:${GITHUB_REF#refs/heads/}-${{ matrix.version }}
+          docker push ${{ env.IMAGE_REPO }}:${GITHUB_REF#refs/heads/}-${{ matrix.version }}
+      - name: Push version tag
+        if: github.ref == 'refs/heads/master'
+        run: |
+          docker tag ${{ env.IMAGE_REPO }}:sha-${{ env.IMAGE_TAG }} ${{ env.IMAGE_REPO }}:${{ matrix.version }}
+          docker push ${{ env.IMAGE_REPO }}:${{ matrix.version }}
+    strategy:
+      matrix:
+        version:
+          - 1
+          - 1-alpine
+          - 2.4
+          - 2.4-alpine
+          - 5
+          - 5-alpine
+          - 6
+
+  readme:
+    needs: manifest
+    runs-on:
+      - self-hosted
+    steps:
+      - uses: actions/checkout@v2
+      - uses: peter-evans/dockerhub-description@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+          repository: ${{ secrets.DOCKER_ORG }}/${{ secrets.DOCKER_REPO }}
