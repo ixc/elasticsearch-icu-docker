@@ -28,7 +28,7 @@ jobs:
           - arm64
           - x64
         version:
-          - 7
+          - 8
 
   manifest:
     env:
@@ -79,7 +79,7 @@ jobs:
     strategy:
       matrix:
         version:
-          - 7
+          - 8
 
   image-x64:
     env:
@@ -119,6 +119,8 @@ jobs:
           - 5
           - 5-alpine
           - 6
+          - 7
+          - 8
 
   readme:
     needs: manifest
